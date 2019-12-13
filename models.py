@@ -35,7 +35,11 @@ class payHistory(db.Model):
     payment_datetime= db.Column(db.DateTime, nullable=False)
     txnhash= db.Column(db.String, nullable=False)
 
-
+class threads(db.Model):
+    __tablename__="threads"
+    id=db.Column(db.Integer, primary_key=True)
+    sch_id= db.Column(db.String, nullable=False)
+    thread_id= db.Column(db.String, nullable=False)
 
 # class PayHistory(db.Model):
 #     __tablename__ = "paymenthistory"

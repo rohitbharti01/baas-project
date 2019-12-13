@@ -16,28 +16,27 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 global passwd
 global keystore
 global infura_url
-global thread_dict
 
 def main():
     db.create_all()
 
 if __name__ == "__main__":
     with app.app_context():
-        self.thread_dict={}
         main()
 
 @app.route('/thr')
-def allthreads():
-    global thread_dict
-    lst=""
-    for key, value in thread_dict:
-        lst+=f"{key} {value}"
-    return lst
+# def allthreads():
+#     lst=""
+#     for key, value in thread_dict:
+#         lst+=f"{key} {value}"
+#     return lst
 
 
 def wait(fromid, toid, val,hrs, sch_id):
-    global thread_dict
-    thread_dict[sch_id]=threading.get_ident()
+    newth=threads(sch_id=sch_id, thread_id=threading.get_ident())
+    db.session.add(newth)
+    db.session.commit()
+
     time.sleep(hrs*3600)
     flag=1
     try:
@@ -134,10 +133,9 @@ def deleteall():
 
 @app.route('/ll')
 def ll():
-    lst="abc"
-    sch=scheduled.query.all()
-    for s in sch:
-        lst+=(f"{s.id} {s.scheduled_time} ")
+    ths=threads.query.all()
+    for th in ths:
+        lst+=(f"{th.sch_id} {th.thread_id} ")
     return lst
 
 @app.route('/login')
@@ -307,8 +305,8 @@ def paymentvalid_now():
     amount=request.form.get("Amount")
     fromid=request.form.get("fromid")
     u=User.query.get(fromid)
-    if u is None or User.query.get(toid) is None:
-        return "user is none"
+    if User.query.get(toid) is None or fromid is toid:
+        return "Invalid account"
 
     flag=1
     w3=Web3(Web3.EthereumTesterProvider())    
@@ -326,9 +324,8 @@ def paymentvalid_later():
     toid=request.form.get("toid")
     amount=request.form.get("Amount")
     fromid=request.form.get("fromid")
-    u=User.query.get(fromid)
-    if u is None or User.query.get(toid) is None:
-        return "user is none"
+    if User.query.get(toid) is None or fromid is toid:
+        return "Invalid account"
 
     flag=1
     if int(amount)>0:
@@ -341,7 +338,7 @@ def paymentvalid_later():
         if(hrs<0 or hrs>24):
             return "Sorry, that didn't work. Schedule time invalid."
         else:
-            return render_template("confirmPayLater.html",fromid=fromid, toid=toid, val=amount, first=u.first, hrs=hrs)
+            return render_template("confirmPayLater.html",fromid=fromid, toid=toid, val=amount, first=User.query.get(int(fromid)).first, hrs=hrs)
     else:
         return "Invalid amount"
 
