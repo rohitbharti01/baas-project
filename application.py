@@ -16,25 +16,35 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 global passwd
 global keystore
 global infura_url
-global threaddict
+global thread_dict
 
 def main():
     db.create_all()
 
 if __name__ == "__main__":
     with app.app_context():
+        self.thread_dict={}
         main()
 
+@app.route('/thr')
+def allthreads():
+    global thread_dict
+    lst=""
+    for key, value in thread_dict:
+        lst+=f"{key} {value}"
+    return lst
+
+
 def wait(fromid, toid, val,hrs, sch_id):
-    global threaddict
-    threaddict[sch_id]=threading.get_ident()
+    global thread_dict
+    thread_dict[sch_id]=threading.get_ident()
     time.sleep(hrs*3600)
     flag=1
     try:
         txnhash=w3.eth.sendTransaction({'from':str(w3.eth.accounts[0]),'to':str(toid),'value': str(val)}) 
         txnhash=str(txnhash.hex())
         scheduledpayment=scheduled.query.get(sch_id)
-        paid=payHistory(payerid=fromid, recipientid=toid, amount=val, payment_datetime=datetime.datetime.now(), txnhash=txnhash)
+        paid=payHistory(payerid=fromid, recipientid=toid, amount=val, payment_datetime=datetime.now(), txnhash=txnhash)
         tid=paid.id
     except:
         flag=-1
@@ -124,9 +134,11 @@ def deleteall():
 
 @app.route('/ll')
 def ll():
-    u=User.query.all()[0]
-    # db.create_all()
-    return str(u.lastlogin)
+    lst="abc"
+    sch=scheduled.query.all()
+    for s in sch:
+        lst+=(f"{s.id} {s.scheduled_time} ")
+    return lst
 
 @app.route('/login')
 def login():
@@ -144,12 +156,12 @@ def checklogin():
 
     user=User.query.filter_by(id=id_).first()
     if user is None:
-        return "User was none"
+        return render_template("login.html", val=0)
         # return render_template("login.html", retry=-1)
     elif user.passwdhash==passhash:
             return render_template("home.html",fromid=id_, first=user.first)
     else:
-        return passwd+" "+user.passwdhash+' '+passhash
+        return render_template("login.html", val=-1)
         # return render_template("login.html", retry=-1)
 
     # else:
@@ -173,7 +185,7 @@ def showall():
         lst+=(f"{u.first} {u.last} {u.id } {u.passwdhash} ")
     return lst
 
-@app.route('/setupaccount', methods=["GET", "POST"])
+@app.route('/setupaccount', methods=["POST"])
 def setupaccount():
     global passwd
     global keystore
@@ -211,7 +223,6 @@ def checksetupreq():
             flag=-1
 
         if not(flag is -1):
-
             infura_url='https://mainnet.infura.io/v3/'+infura_key
             w3=Web3(Web3.HTTPProvider(infura_url))
             keystore=str(keystore)
@@ -290,19 +301,15 @@ def payscheduler():
 @app.route('/paymentvalid_now',methods=["POST"])
 def paymentvalid_now():
 
-    global passwd
-    global keystore
     # addresses=request.form.get("addresses")
     txhash="hash"
     toid=request.form.get("toid")
-    amount=request.form.get("second")
+    amount=request.form.get("Amount")
     fromid=request.form.get("fromid")
     u=User.query.get(fromid)
-    if u is None:
+    if u is None or User.query.get(toid) is None:
         return "user is none"
-    # paytime=request.form.get("paytime")             #1 for now 2 for later, passed by paynow & scheduler
 
-    # infura_url='https://mainnet.infura.io/v3/'+ User.query.filter_by(id=id_).first().infurakey
     flag=1
     w3=Web3(Web3.EthereumTesterProvider())    
     if int(amount)>0:
@@ -315,34 +322,29 @@ def paymentvalid_now():
 @app.route('/paymentvalid_later',methods=["POST"])
 def paymentvalid_later():
 
-    global passwd
-    global keystore
-    # addresses=request.form.get("addresses")
     txhash="hash"
     toid=request.form.get("toid")
     amount=request.form.get("Amount")
     fromid=request.form.get("fromid")
     u=User.query.get(fromid)
+    if u is None or User.query.get(toid) is None:
+        return "user is none"
 
-    # infura_url='https://mainnet.infura.io/v3/'+ User.query.filter_by(id=id_).first().infurakey
     flag=1
-    w3=Web3(Web3.EthereumTesterProvider())    
-    if w3.isAddress(address):
-        if int(amount)>0:
-            # web3=Web3(Web3.HTTPProvider(infura_url))
-            # keystore=str(keystore)
-            # acc=web3.eth.account.decrypt(keystore, passwd)
-            # fromaddr=acc.address
+    if int(amount)>0:
+        # web3=Web3(Web3.HTTPProvider(infura_url))
+        # keystore=str(keystore)
+        # acc=web3.eth.account.decrypt(keystore, passwd)
+        # fromaddr=acc.address
 
-            hrs=request.form.get("Hours")
-            if(hrs<0 or hrs>24):
-                return "Sorry, that didn't work. Schedule time invalid."
-            else:
-                return render_template("confirmPayLater.html",fromid=fromid, toid=toid, val=amount, first=u.first, hrs=hrs)
+        hrs=int(request.form.get("Hours"))
+        if(hrs<0 or hrs>24):
+            return "Sorry, that didn't work. Schedule time invalid."
         else:
-            return "Invalid amount"
+            return render_template("confirmPayLater.html",fromid=fromid, toid=toid, val=amount, first=u.first, hrs=hrs)
     else:
-        return "Invalid address"
+        return "Invalid amount"
+
 
 @app.route('/confirmedpaynow', methods=["POST"])
 def confirmedpaynow():
@@ -368,9 +370,12 @@ def confirmedpaylater():
     fromid=request.form.get("fromid")
     toid=request.form.get("toid")
     val=request.form.get("val")
-    hrs=request.form.get("hrs")
+    hrs=int(request.form.get("hrs"))
 
-    scheduledpayment=scheduled(payerid=fromid, recipientid=toid, amount=val,scheduled_time=datetime.datetime.now()+timedelta(hours=hrs) )
+    scheduledpayment=scheduled(payerid=fromid, recipientid=toid, amount=val,scheduled_time=datetime.now()+timedelta(hours=hrs) )
+    db.session.add(scheduledpayment)
+    db.session.commit()
     sch_id=scheduledpayment.id
     t = threading.Thread(name='wait', target=wait, args=(fromid, toid, val,hrs, sch_id))
     t.start()
+    return str(sch_id)

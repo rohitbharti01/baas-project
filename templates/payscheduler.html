@@ -3,7 +3,7 @@
     <head>BaasApp </head>
     <body>
         <h1>PayScheduler Portal</h1>
-        <form action="{{url_for('paymentvalid_later')}}" method="POST"></form>
+        <form action="{{url_for('paymentvalid_later')}}" method="POST">
         <ul>
             <li>
                 <input type="text" name="toid" placeholder="ID of Recipient" value=""></li>
@@ -20,6 +20,6 @@
 
         </ul>
         <button>Pay</button>
-
+        </form>
     </body>
 </html>
