@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+
+<head>BaasApp </head>
+
+<body>
+    <h3>Hi, {{first}}, here is your keystore. Note it in a secure place.</h3>
+    <p>{{keystore}}</p>
+    <br>
+    <form action="{{url_for('home')}}" method="POST">
+        <input type="hidden" name="id_" value=id_/>
+        <input type="hidden" name="first" value=first>
+        <button>Go Home</button>
+    </form>
+</body>
+
+</html>

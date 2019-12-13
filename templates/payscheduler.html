@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    <head>BaasApp </head>
+    <body>
+        <h1>PayNow Portal</h1>
+        <form action="{{url_for('paymentvalid_now')}}" method="POST"></form>
+        <ul>
+            {% for i in range(numtxn) %}
+            <li>
+                <input type="text" name="infuraaddr[i]" placeholder="Infura Address of Recipient">
+                <input type="number" name="amt[i]" placeholder="Amount">
+            </li>
+            {% endfor %}
+        </ul>
+        <button>Pay</button>
+
+    </body>
+</html>

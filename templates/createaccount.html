@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>BaasApp</head>
+    <body>
+        <h1>Create an account</h1>
+        {% if retry %}
+        <p>Please fill all fields.</p>
+        {% endif %}
+        <form action="{{url_for('checksignup')}}" method="POST">
+            <input type="text" name="first" placeholder="First Name">
+            <input type="text" name="last" placeholder="Last Name">
+            <input type="text" name="phone_no" placeholder="Phone Number">
+            <input type="text" name="aadhar" placeholder="Aadhar ID">
+            <input type="text" name="infura_key" placeholder="Infura Public Key">
+            <input type="password" name="passwd" placeholder="Password">
+            <input type="text" name="email" placeholder="Email ID">
+            <button>Submit</button>
+        </form>
+    </body>
+</html>
