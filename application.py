@@ -3,8 +3,9 @@ from web3 import Web3, EthereumTesterProvider
 import hashlib
 from models import *
 import os
-import simplejson as json 
-from datetime import date
+from datetime import date, datetime, timedelta
+import time
+import threading
 
 app=Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"]=os.getenv("SQLALCHEMY_DATABASE_URI")
@@ -12,6 +13,10 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]=False
 db.init_app(app) 
 UPLOAD_FOLDER='./uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+global passwd
+global keystore
+global infura_url
+global threaddict
 
 def main():
     db.create_all()
@@ -19,6 +24,25 @@ def main():
 if __name__ == "__main__":
     with app.app_context():
         main()
+
+def wait(fromid, toid, val,hrs, sch_id):
+    global threaddict
+    threaddict[sch_id]=threading.get_ident()
+    time.sleep(hrs*3600)
+    flag=1
+    try:
+        txnhash=w3.eth.sendTransaction({'from':str(w3.eth.accounts[0]),'to':str(toid),'value': str(val)}) 
+        txnhash=str(txnhash.hex())
+        scheduledpayment=scheduled.query.get(sch_id)
+        paid=payHistory(payerid=fromid, recipientid=toid, amount=val, payment_datetime=datetime.datetime.now(), txnhash=txnhash)
+        tid=paid.id
+    except:
+        flag=-1
+
+    if flag==1:
+        return str(txnhash)
+    else:
+        return "Sorry, that didn't work."
 
 def quotechange(str_):
     str_=str(str_)
@@ -39,9 +63,9 @@ def count(num):
 def loginfn(infura_url, passwd, keystore):
     acc={}
     val=1
-    web3=Web3(Web3.HTTPProvider(infura_url))
+    w3=Web3(Web3.HTTPProvider(infura_url))
     try:
-        acc=web3.eth.account.decrypt(keystore, passwd)
+        acc=w3.eth.account.decrypt(keystore, passwd)
     except ValueError:
         print("Wrong password")
         val=-1
@@ -67,28 +91,29 @@ def checksignup():
         infura_key=request.form.get("infura_key")
         email=request.form.get("email")
         passwd=str(request.form.get("passwd"))
+        passwdhash=hashlib.md5(passwd.encode()).hexdigest()
 
         if first is "" or last is "" or phone_no is "" or aadhar is "" or infura_key is "" or email is "" or passwd is "":
             flag=-1
 
         if flag is 1:
             infura_url='https://mainnet.infura.io/v3/'+infura_key
-            web3=Web3(Web3.HTTPProvider(infura_url))
-            account = web3.eth.account.create()
+            w3=Web3(Web3.HTTPProvider(infura_url))
+            account = w3.eth.account.create()
             keystore=account.encrypt(passwd)
             keystore=str(keystore)
             keystorehash = hashlib.md5(keystore.encode())
             keystorehash=keystorehash.hexdigest()
             
-            u=User(first=first, last=last, phone_no=phone_no, email=email, aadhar=aadhar, addr=account.address,keystorehash=keystorehash, lastlogin=date.today())
-            id_=u.id
+            u=User(first=first, last=last, phone_no=phone_no, email=email, aadhar=aadhar, addr=account.address,keystorehash=keystorehash, lastlogin=date.today(), infurakey=infura_key, passwdhash=str(passwdhash))
+            fromid=u.id
             db.session.add(u)
             db.session.commit()
         
         if flag is -1:
             return render_template("createaccount.html", retry =True)
         else:
-            return render_template("accountcreated.html", id_=id_, first=first, keystore=keystore)
+            return render_template("accountcreated.html",fromid=fromid , first=first, keystore=keystore)
 
 @app.route('/deleteall')
 def deleteall():
@@ -114,35 +139,49 @@ def login():
 @app.route('/checklogin', methods=["POST"])
 def checklogin():
     id_=request.form.get("id_")
+    passwd=str(request.form.get("passwd"))
+    passhash=(hashlib.md5(passwd.encode())).hexdigest()
+
     user=User.query.filter_by(id=id_).first()
     if user is None:
-        return render_template("login.html", retry=-1)
+        return "User was none"
+        # return render_template("login.html", retry=-1)
+    elif user.passwdhash==passhash:
+            return render_template("home.html",fromid=id_, first=user.first)
     else:
-        first_=user.first
-        diff=0
-        d2=user.lastlogin
-        d1=date.today()
-        delta=d2-d1
-        diff=delta.days
+        return passwd+" "+user.passwdhash+' '+passhash
+        # return render_template("login.html", retry=-1)
 
-        if diff>=2:
-            return render_template("setupaccount.html", val=1)
-        else:
-            return render_template("home.html", first=first_, id_=id_)
+    # else:
+    #     first_=user.first
+    #     diff=0
+    #     d2=user.lastlogin
+    #     d1=date.today()
+    #     delta=d2-d1
+    #     diff=delta.days
+
+    #     if diff>=2:
+    #         return render_template("setupaccount.html", val=1)
+    #     else:
+    #         return render_template("home.html", fromid=id_)
 
 @app.route('/showall')
 def showall():
     lst=""
     us=User.query.all()
     for u in us:
-        lst+=(f"{u.first} {u.last} {u.addr}")
+        lst+=(f"{u.first} {u.last} {u.id } {u.passwdhash} ")
     return lst
 
 @app.route('/setupaccount', methods=["GET", "POST"])
 def setupaccount():
+    global passwd
+    global keystore
+
     infura_key=request.form.get("infura_key")
     passwd=request.form.get("passwd")
     keystore=request.form.get("keystore")
+    infura_url='https://mainnet.infura.io/v3/'+infura_key
 
     if request.method=="POST":          #reset password and file fields if it is a retry
         passwd=""
@@ -174,13 +213,13 @@ def checksetupreq():
         if not(flag is -1):
 
             infura_url='https://mainnet.infura.io/v3/'+infura_key
-            web3=Web3(Web3.HTTPProvider(infura_url))
+            w3=Web3(Web3.HTTPProvider(infura_url))
             keystore=str(keystore)
             ks_hash = hashlib.md5(keystore.encode())
             ks_hash=ks_hash.hexdigest()
  
             try:
-                acc=web3.eth.account.decrypt(keystore, 'foobar')
+                acc=w3.eth.account.decrypt(keystore, 'foobar')
                 acc=str(acc.hex())
             except ValueError:
                 flag=-2
@@ -196,7 +235,7 @@ def checksetupreq():
                         flag=-3  
 
         if flag is 1:
-            return render_template("home.html", first=user_.first, id_=user_.id)
+            return render_template("home.html", first=user_.first, fromid=user_.id)
         else:
             return str(flag)
             # return str(ks_hash)+'\n'+str(kk)
@@ -208,17 +247,17 @@ def home():
         return "Please login first"
     else:
         first=request.form.get("first")
-        id_=request.form.get("id_")
-        if first is None or id_ is None:
+        fromid=request.form.get("fromid")
+        if first is None or fromid is None:
             return abort(404)
         else:
-            return render_template("home.html", first=first, id_=id_)
+            return render_template("home.html", first=first, fromid=fromid)
 
 @app.route('/paynow', methods=["POST", "GET"])
 def paynow():
     if request.method=="GET":               #if directly via address bar
-        id_=request.args.get('abc')
-        if id_ is None:
+        idnum=request.args.get('abc')
+        if idnum is None:
             return "No such field."
         else:
             user=User.query.filter_by(id=id_).first()
@@ -232,47 +271,106 @@ def paynow():
                 if diff>=2:
                     return render_template("setupaccount.html", val=1)  #time to setup wallet again
                 else:
-                    return render_template("paynow.html", infuraaddr=count(1))     #by default, pay to one account only
+                    return render_template("paynow.html", numtxn=1)     #by default, pay to one account only
     else:
-        numtxn=request.form.get("numtxn")
+        fromid=request.form.get("fromid")
+        # numtxn=request.form.get("numtxn")
+        numtxn=1
         numtxn=int(numtxn)
-        lst=count(numtxn)
-        return render_template("paynow.html", infuraaddr=count(numtxn), data=[]) #numtxn transactions allowed, via post method request
+        return render_template("paynow.html",numtxn=numtxn, fromid=fromid) #numtxn transactions allowed, via post method request
 
 @app.route('/payscheduler', methods=["POST"])
 def payscheduler():
+    fromid=request.form.get("fromid")
     numtxn=request.form.get("numtxn")
+    numtxn=1
     numtxn=int(numtxn)
-    return render_template("payscheduler.html", numtxn=count(numtxn))
+    return render_template("payscheduler.html",numtxn=numtxn, fromid=fromid) #numtxn transactions allowed, via post method request
 
 @app.route('/paymentvalid_now',methods=["POST"])
 def paymentvalid_now():
 
-    # infuraaddr=(request.form.getlist('infuraaddr[]'))
-    # amt=json.loads(request.form.get("amt"))
-    # infuraaddr2=list(set(infuraaddr))
-    # if not(len(infuraaddr)==len(infuraaddr2)):fir'] = first %
-    #     return "Some duplicate addresses..."
-    #     # some duplicate addresses
-    
-    # else:
-    #     x=0
-    #     l=len(infuraaddr)
-    #     for i in range(l):
-    #         x+=amt[i]
-    #         if not(web3.utils.isAddress(infuraaddr[i])):
-    #             return "gibberish"
+    global passwd
+    global keystore
+    # addresses=request.form.get("addresses")
+    txhash="hash"
+    toid=request.form.get("toid")
+    amount=request.form.get("second")
+    fromid=request.form.get("fromid")
+    u=User.query.get(fromid)
+    if u is None:
+        return "user is none"
+    # paytime=request.form.get("paytime")             #1 for now 2 for later, passed by paynow & scheduler
 
-    return str("Payment..")
+    # infura_url='https://mainnet.infura.io/v3/'+ User.query.filter_by(id=id_).first().infurakey
+    flag=1
+    w3=Web3(Web3.EthereumTesterProvider())    
+    if int(amount)>0:
+        # web3=Web3(Web3.HTTPProvider(infura_url))
+        # keystore=str(keystore)
+        # acc=web3.eth.account.decrypt(keystore, passwd)
+        # fromaddr=acc.address
+        return render_template("confirmPayNow.html",fromid=fromid, toid=toid, val=amount, first=u.first)
 
-    # hex_str = selfaddress
-    # # console.log(selfaddress)
-    # hex_int = int(hex_str, 16)
-    # new_int = hex_int + 0x200
-    
+@app.route('/paymentvalid_later',methods=["POST"])
+def paymentvalid_later():
 
-    # bal=app.web3.eth.getBalance(selfaddress)
-    # if(bal<x):
-    #     return render_template('insufficientfunds.html')
-    # else:
-    #     return render_template("confirmpayment.html")
+    global passwd
+    global keystore
+    # addresses=request.form.get("addresses")
+    txhash="hash"
+    toid=request.form.get("toid")
+    amount=request.form.get("Amount")
+    fromid=request.form.get("fromid")
+    u=User.query.get(fromid)
+
+    # infura_url='https://mainnet.infura.io/v3/'+ User.query.filter_by(id=id_).first().infurakey
+    flag=1
+    w3=Web3(Web3.EthereumTesterProvider())    
+    if w3.isAddress(address):
+        if int(amount)>0:
+            # web3=Web3(Web3.HTTPProvider(infura_url))
+            # keystore=str(keystore)
+            # acc=web3.eth.account.decrypt(keystore, passwd)
+            # fromaddr=acc.address
+
+            hrs=request.form.get("Hours")
+            if(hrs<0 or hrs>24):
+                return "Sorry, that didn't work. Schedule time invalid."
+            else:
+                return render_template("confirmPayLater.html",fromid=fromid, toid=toid, val=amount, first=u.first, hrs=hrs)
+        else:
+            return "Invalid amount"
+    else:
+        return "Invalid address"
+
+@app.route('/confirmedpaynow', methods=["POST"])
+def confirmedpaynow():
+    fromid=request.form.get("fromid")
+    toid=request.form.get("toid")
+    val=request.form.get("val")
+
+    try:
+        txnhash=w3.eth.sendTransaction({'from':str(w3.eth.accounts[0]),'to':str(to),'value': str(val)}) 
+        txnhash=str(txnhash.hex())
+        paid=payHistory(payerid=fromid, recipientid=toid, amount=val, payment_date=date.today(), payment_time=time.now(), txnhash=txnhash)
+        tid=paid.id     #later use maybe
+    except:
+        flag=-1
+
+    if flag==1:
+        return str(txnhash)
+    else:
+        return "Sorry, that didn't work."
+
+@app.route('/confirmedPayLater', methods=["POST"])
+def confirmedpaylater():
+    fromid=request.form.get("fromid")
+    toid=request.form.get("toid")
+    val=request.form.get("val")
+    hrs=request.form.get("hrs")
+
+    scheduledpayment=scheduled(payerid=fromid, recipientid=toid, amount=val,scheduled_time=datetime.datetime.now()+timedelta(hours=hrs) )
+    sch_id=scheduledpayment.id
+    t = threading.Thread(name='wait', target=wait, args=(fromid, toid, val,hrs, sch_id))
+    t.start()

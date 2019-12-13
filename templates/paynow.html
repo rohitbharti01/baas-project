@@ -1,25 +1,49 @@
 <!DOCTYPE html>
+
+<script>
+
+function myfunction()
+    {
+      document.getElementById("first").value="";
+      document.getElementById("second").value="";
+      document.getElementById("numtxn").value=int(document.getElementById("numtxn").value)=-1;
+      if(document.getElementById("numtxn").value<0) 
+      {
+        document.getElementById("first").remove();
+        document.getElementById("second").remove();
+        document.getElementById("addbutton").remove();
+        document.getElementById("paybutton").type="button";
+      }
+
+
+    }
+    
+</script>
+
 <html>
     <head>BaasApp </head>
     <body>
         <h1>PayNow Portal</h1>
         <form action="{{url_for('paymentvalid_now')}}" method="POST">
         <ul>
-            {% for i in infuraaddr %}
+            
             <li>
-                <input type="text" name="first" placeholder="Infura Address of Recipient"></li>
+                <input type="text" name="toid" placeholder="ID of Recipient" value=""></li>
             <li>
-
-            <input type="number" name="second" placeholder="Amount">
+            <input type="number" name="second" placeholder="Amount" value="">
             </li>
-            <!-- {% data[i]['fir'] = first %}
-            {% data[i]['sec'] = second %}
-    
-            <input type="hidden" name="data[]" id="">
-             -->
-            {% endfor %}
+            <!-- <button type="button" onclick="myfunction()" name="addbutton"> Add</button> -->
+            <input type="hidden" name="fromid" value="{{fromid}}">
+            <!-- <input type="text" name="numtxn" value="{{numtxn}}"> -->
+            <!-- <input type="hidden" name="paytime" value="1"> -->
+
+            <!-- <input type="hidden" name="addresses" value="">
+            <input type="hidden" name="amounts" value="">             -->
+            <!-- <input type="hidden" name="numtxn" val=numtxn> -->
+            <!-- <button onclick="addval(numtxn)">Add</button> -->
         </ul>
-        <button>Pay</button>
-    </form>
+        <!-- <input type="hidden" name="paybutton" value="Pay"> -->
+        <button type="hidden" name="paybutton">Pay</button>
+      </form>
     </body>
 </html>

@@ -4,14 +4,14 @@
     <body>
         <h1>Hi, {{first}}! What would you like to try today?</h1>
         <form action="{{url_for('paynow')}}" method="POST">
-            <input type="number" name="numtxn" placeholder="Enter number of payments">
+            <!-- <input type="number" name="numtxn" placeholder="Enter number of payments"> -->
             <!-- hidden input to post reques - id -->
-            <input type="hidden", name="id_", value="id_">
+            <input type="hidden", name="fromid",id="fromid" value="{{fromid}}">
             <button>Pay Now (Immediate Transaction)</button>
         </form>
         <form action="{{url_for('payscheduler')}}" method="POST">
-            <input type="number" name="numtxn" placeholder="Enter number of payments">
-            <input type="hidden", name="id_", value="id_">
+            <!-- <input type="number" name="numtxn" placeholder="Enter number of payments"> -->
+            <input type="hidden", name="fromid", value="{{fromid}}">
             <button>Schedule Payment (Later Transaction)</button>
         </form>
     </body>

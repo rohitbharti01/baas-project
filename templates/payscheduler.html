@@ -2,15 +2,22 @@
 <html>
     <head>BaasApp </head>
     <body>
-        <h1>PayNow Portal</h1>
-        <form action="{{url_for('paymentvalid_now')}}" method="POST"></form>
+        <h1>PayScheduler Portal</h1>
+        <form action="{{url_for('paymentvalid_later')}}" method="POST"></form>
         <ul>
-            {% for i in range(numtxn) %}
             <li>
-                <input type="text" name="infuraaddr[i]" placeholder="Infura Address of Recipient">
-                <input type="number" name="amt[i]" placeholder="Amount">
+                <input type="text" name="toid" placeholder="ID of Recipient" value=""></li>
+            <li>
+            <input type="number" name="Amount" placeholder="Amount" value="">
             </li>
-            {% endfor %}
+            <li>
+            <input type="number" name="Hours" placeholder="Hours(less than 24)" value="">
+            </li>
+            <!-- <button type="button" onclick="myfunction()" name="addbutton"> Add</button> -->
+            <input type="hidden" name="fromid" value="{{fromid}}">
+            <!-- <input type="text" name="numtxn" value="{{numtxn}}"> -->
+            <!-- <input type="hidden" name="paytime" value="2"> -->
+
         </ul>
         <button>Pay</button>
 
