@@ -6,13 +6,9 @@ import os
 from datetime import date, datetime, timedelta
 import time
 import threading
-<<<<<<< HEAD
 import onetimepass
 import pyqrcode
 import io
-=======
-from flask_table import Table, Col, create_table
->>>>>>> 58a5047e14011ee56b5d4e85ecc882e6d99a4d88
 
 app=Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"]=os.getenv("SQLALCHEMY_DATABASE_URI")
@@ -23,7 +19,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 global passwd
 global keystore
 global infura_url
-loggedin=-1
+global threaddict
 
 def main():
     db.create_all()
@@ -32,36 +28,16 @@ if __name__ == "__main__":
     with app.app_context():
         main()
 
-# @app.route('/thr')
-# def allthreads():
-#     lst=""
-#     for key, value in thread_dict:
-#         lst+=f"{key} {value}"
-#     return lst
-
-# class historytable(Table):
-
-
-class TableCls(Table):
-    id = Col('PaymentID')
-    payerid = Col('Payer\'s ID')
-    recipientid = Col('Recipient\'s ID')
-    amount = Col('Amount')
-    scheduled_time = Col('Scheduled Time')
-
-
 def wait(fromid, toid, val,hrs, sch_id):
-    newth=threads(sch_id=sch_id, thread_id=threading.get_ident())
-    db.session.add(newth)
-    db.session.commit()
-
+    global threaddict
+    threaddict[sch_id]=threading.get_ident()
     time.sleep(hrs*3600)
     flag=1
     try:
         txnhash=w3.eth.sendTransaction({'from':str(w3.eth.accounts[0]),'to':str(toid),'value': str(val)}) 
         txnhash=str(txnhash.hex())
         scheduledpayment=scheduled.query.get(sch_id)
-        paid=payHistory(payerid=fromid, recipientid=toid, amount=val, payment_datetime=datetime.now(), txnhash=txnhash)
+        paid=payHistory(payerid=fromid, recipientid=toid, amount=val, payment_datetime=datetime.datetime.now(), txnhash=txnhash)
         tid=paid.id
     except:
         flag=-1
@@ -100,6 +76,10 @@ def loginfn(infura_url, passwd, keystore):
         return acc,val
 
 @app.route('/')
+@app.route('/index')
+def index():
+    return render_template("newhome.html")
+
 @app.route('/signup')
 def signup():
     return render_template("createaccount.html", retry =False)
@@ -136,7 +116,7 @@ def checksignup():
             fromid=u.id
             db.session.add(u)
             db.session.commit()
-
+        
         if flag is -1:
             return render_template("createaccount.html", retry =True)
         else:
@@ -151,20 +131,9 @@ def deleteall():
 
 @app.route('/ll')
 def ll():
-    list_="ab"
-    ths=threads.query.all()
-    for th in ths:
-        list_+=(f"{th.sch_id} {th.thread_id} ")
-    return list_
-
-@app.route('/showall')
-def showall():
-    lst=""
-    us=User.query.all()
-    for u in us:
-        lst+=(f"{u.first} {u.last} {u.id } {u.passwdhash} ")
-    return lst
-
+    u=User.query.all()[0]
+    # db.create_all()
+    return str(u.lastlogin)
 
 @app.route('/login')
 def login():
@@ -176,7 +145,6 @@ def login():
 
 @app.route('/checklogin', methods=["POST"])
 def checklogin():
-    global loggedin
     id_=request.form.get("id_")
     passwd=str(request.form.get("passwd"))
     passhash=(hashlib.md5(passwd.encode())).hexdigest()
@@ -184,18 +152,13 @@ def checklogin():
 
     user=User.query.filter_by(id=id_).first()
     if user is None:
-        return render_template("login.html", val=0)
-        # return render_template("login.html", retry=-1)
-<<<<<<< HEAD
+        #return "User was none"
+        return render_template("login.html", retry=-1)
     elif user.passwdhash==passhash and user.verify_totp(token):
-=======
-    elif user.passwdhash==passhash:
-            loggedin=id_
->>>>>>> 58a5047e14011ee56b5d4e85ecc882e6d99a4d88
-            return render_template("home.html",fromid=id_, first=user.first)
+            return render_template("afterlogin.html",fromid=id_, first=user.first)
     else:
-        return render_template("login.html", val=-1)
-        # return render_template("login.html", retry=-1)
+        #return passwd+" "+user.passwdhash+' '+passhash
+        return render_template("login.html", retry=-1)
 
     # else:
     #     first_=user.first
@@ -210,8 +173,15 @@ def checklogin():
     #     else:
     #         return render_template("home.html", fromid=id_)
 
+@app.route('/showall')
+def showall():
+    lst=""
+    us=User.query.all()
+    for u in us:
+        lst+=(f"{u.first} {u.last} {u.id } {u.passwdhash} ")
+    return lst
 
-@app.route('/setupaccount', methods=["POST"])
+@app.route('/setupaccount', methods=["GET", "POST"])
 def setupaccount():
     global passwd
     global keystore
@@ -243,11 +213,13 @@ def checksetupreq():
         # keystore.save(secure_filename(k.filename))
         f=open(os.path.join(app.config['UPLOAD_FOLDER'], str(k)),'r')
         keystore=quotechange(str(f.read()))
+        # keystore=json.loads(quotechange(str(f.read())))
 
         if infura_key is "" or passwd is "" or str(keystore) is "":            #if user leaves a field blank
             flag=-1
 
         if not(flag is -1):
+
             infura_url='https://mainnet.infura.io/v3/'+infura_key
             w3=Web3(Web3.HTTPProvider(infura_url))
             keystore=str(keystore)
@@ -259,6 +231,7 @@ def checksetupreq():
                 acc=str(acc.hex())
             except ValueError:
                 flag=-2
+                    # flag=-2
 
             # finally:
             if flag is 1:
@@ -273,6 +246,8 @@ def checksetupreq():
             return render_template("home.html", first=user_.first, fromid=user_.id)
         else:
             return str(flag)
+            # return str(ks_hash)+'\n'+str(kk)
+            # return render_template("setupaccount.html", val=flag)
 
 @app.route('/home',methods=["GET", "POST"])
 def home():
@@ -323,15 +298,19 @@ def payscheduler():
 @app.route('/paymentvalid_now',methods=["POST"])
 def paymentvalid_now():
 
+    global passwd
+    global keystore
     # addresses=request.form.get("addresses")
     txhash="hash"
     toid=request.form.get("toid")
-    amount=request.form.get("Amount")
+    amount=request.form.get("second")
     fromid=request.form.get("fromid")
     u=User.query.get(fromid)
-    if User.query.get(toid) is None or fromid is toid:
-        return "Invalid account"
+    if u is None:
+        return "user is none"
+    # paytime=request.form.get("paytime")             #1 for now 2 for later, passed by paynow & scheduler
 
+    # infura_url='https://mainnet.infura.io/v3/'+ User.query.filter_by(id=id_).first().infurakey
     flag=1
     w3=Web3(Web3.EthereumTesterProvider())    
     if int(amount)>0:
@@ -344,29 +323,34 @@ def paymentvalid_now():
 @app.route('/paymentvalid_later',methods=["POST"])
 def paymentvalid_later():
 
+    global passwd
+    global keystore
+    # addresses=request.form.get("addresses")
     txhash="hash"
     toid=request.form.get("toid")
     amount=request.form.get("Amount")
     fromid=request.form.get("fromid")
-    if User.query.get(fromid) is None or User.query.get(toid) is None or fromid is toid:
-        return "Invalid account"
+    u=User.query.get(fromid)
 
+    # infura_url='https://mainnet.infura.io/v3/'+ User.query.filter_by(id=id_).first().infurakey
     flag=1
-    if int(amount)>0:
-        # web3=Web3(Web3.HTTPProvider(infura_url))
-        # keystore=str(keystore)
-        # acc=web3.eth.account.decrypt(keystore, passwd)
-        # fromaddr=acc.address
+    w3=Web3(Web3.EthereumTesterProvider())    
+    if w3.isAddress(address):
+        if int(amount)>0:
+            # web3=Web3(Web3.HTTPProvider(infura_url))
+            # keystore=str(keystore)
+            # acc=web3.eth.account.decrypt(keystore, passwd)
+            # fromaddr=acc.address
 
-        hrs=int(request.form.get("Hours"))
-        if(hrs<0 or hrs>24):
-            return "Sorry, that didn't work. Schedule time invalid."
+            hrs=request.form.get("Hours")
+            if(hrs<0 or hrs>24):
+                return "Sorry, that didn't work. Schedule time invalid."
+            else:
+                return render_template("confirmPayLater.html",fromid=fromid, toid=toid, val=amount, first=u.first, hrs=hrs)
         else:
-            first=User.query.get(fromid)
-            return render_template("confirmPayLater.html",fromid=fromid, toid=toid, val=amount,first=first , hrs=hrs)
+            return "Invalid amount"
     else:
-        return "Invalid amount"
-
+        return "Invalid address"
 
 @app.route('/confirmedpaynow', methods=["POST"])
 def confirmedpaynow():
@@ -392,15 +376,12 @@ def confirmedpaylater():
     fromid=request.form.get("fromid")
     toid=request.form.get("toid")
     val=request.form.get("val")
-    hrs=int(request.form.get("hrs"))
+    hrs=request.form.get("hrs")
 
-    scheduledpayment=scheduled(payerid=fromid, recipientid=toid, amount=val,scheduled_time=datetime.now()+timedelta(hours=hrs) )
-    db.session.add(scheduledpayment)
-    db.session.commit()
+    scheduledpayment=scheduled(payerid=fromid, recipientid=toid, amount=val,scheduled_time=datetime.datetime.now()+timedelta(hours=hrs) )
     sch_id=scheduledpayment.id
     t = threading.Thread(name='wait', target=wait, args=(fromid, toid, val,hrs, sch_id))
     t.start()
-<<<<<<< HEAD
 
 
 @app.route('/twofactor')
@@ -430,18 +411,3 @@ def qrcode():
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0'}
-=======
-    return str(sch_id)
-
-@app.route('/viewScheduled', methods=["GET","POST"])
-def viewScheduled():
-    global loggedin
-
-    id_=loggedin
-    # return str(id_)
-    items=scheduled.query.filter_by(payerid=id_)
-
-    tableclsobj=TableCls(items)
-    tableclsobj.border=True
-    return render_template('results.html', table=tableclsobj)
->>>>>>> 58a5047e14011ee56b5d4e85ecc882e6d99a4d88

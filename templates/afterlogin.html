@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!-- Theme Made By www.w3schools.com -->
-  <title>insufficientfunds</title>
+  <title>accountcreated</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
@@ -225,7 +225,23 @@
       </div>
     </div>
   </form> -->
-  <h1>Insufficient Funds</h1>
+ <h2><font color="white">Hi, {{first}}, Welcome to i-Bharat Pay</font></h2>
+  <!-- <h4>What we offer</h4> -->
+  <form action="{{url_for('paynow')}}" method="POST">
+            <input type="number" name="numtxn" placeholder="Enter number of payments">
+            <!-- hidden input to post reques - id -->
+            <input type="hidden", name="id_", value="id_">
+            <input type="submit" class="btn btn-success">Pay Now (Immediate Transaction)</button>
+        </form>
+        <br>
+        <br>
+        <form action="{{url_for('payscheduler')}}" method="POST">
+            <input type="number" name="numtxn" placeholder="Enter number of payments">
+            <input type="hidden", name="id_", value="id_">
+            <!-- <button >Success</button> -->
+            <button type="button" class="btn btn-success">Schedule Payment (Later Transaction)</button>
+        </form>
+  
 </div>
 
 <!-- Container (About Section) -->

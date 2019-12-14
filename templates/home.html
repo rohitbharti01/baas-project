@@ -1,18 +1,69 @@
 <!DOCTYPE html>
 <html>
-    <head>BaasApp</head>
-    <body>
-        <h1>Hi, {{first}}! What would you like to try today?</h1>
+    <center><head><font color="white">BaasApp</font></head></center>
+
+    <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+    <body style="background-image: url('backy.jpg');">
+        <nav class="navbar navbar-default navbar-fixed-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>                        
+      </button>
+     <img src="logo.jpg" height="65" width="65">
+      <!-- <a class="navbar-brand" href="#myPage">Logo</a> -->
+    </div>
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#myPage">HOME</a></li>
+        <li><a href="#band">TOUR</a></li>
+        <li><a href="#tour">ABOUT</a></li>
+        <li><a href="#contact">CONTACT</a></li>
+        <li class="dropdown">
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#">MORE
+          <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><a href="#">Merchandise</a></li>
+            <li><a href="#">Extras</a></li>
+            <li><a href="#">Media</a></li> 
+          </ul>
+        </li>
+        <!-- <li><a href="#"><span class="glyphicon glyphicon-search"></span></a></li> -->
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<center>
+    <br>
+    <br>
+        <font color="white"><h1 >Hi, {{first}}! What would you like to try today?</h1></font>
+        <br>
+        <br>
+        <br>
+        <br>
         <form action="{{url_for('paynow')}}" method="POST">
-            <!-- <input type="number" name="numtxn" placeholder="Enter number of payments"> -->
+            <input type="number" name="numtxn" placeholder="Enter number of payments">
             <!-- hidden input to post reques - id -->
-            <input type="hidden", name="fromid",id="fromid" value="{{fromid}}">
-            <button>Pay Now (Immediate Transaction)</button>
+            <input type="hidden", name="id_", value="id_">
+            <button type="button" class="btn btn-success">Pay Now (Immediate Transaction)</button>
         </form>
+        <br>
+        <br>
         <form action="{{url_for('payscheduler')}}" method="POST">
-            <!-- <input type="number" name="numtxn" placeholder="Enter number of payments"> -->
-            <input type="hidden", name="fromid", value="{{fromid}}">
-            <button>Schedule Payment (Later Transaction)</button>
+            <input type="number" name="numtxn" placeholder="Enter number of payments">
+            <input type="hidden", name="id_", value="id_">
+            <!-- <button >Success</button> -->
+            <button type="button" class="btn btn-success">Schedule Payment (Later Transaction)</button>
         </form>
+
+    </center>
     </body>
 </html>
