@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, abort
+from flask import Flask, render_template, request, send_file, abort,redirect,url_for
 from web3 import Web3, EthereumTesterProvider
 import hashlib
 from models import *
@@ -6,6 +6,9 @@ import os
 from datetime import date, datetime, timedelta
 import time
 import threading
+import onetimepass
+import pyqrcode
+import io
 
 app=Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"]=os.getenv("SQLALCHEMY_DATABASE_URI")
@@ -113,7 +116,7 @@ def checksignup():
         if flag is -1:
             return render_template("createaccount.html", retry =True)
         else:
-            return render_template("accountcreated.html",fromid=fromid , first=first, keystore=keystore)
+            return redirect(url_for("two_factor_setup"))
 
 @app.route('/deleteall')
 def deleteall():
@@ -141,12 +144,13 @@ def checklogin():
     id_=request.form.get("id_")
     passwd=str(request.form.get("passwd"))
     passhash=(hashlib.md5(passwd.encode())).hexdigest()
+    token = request.form.get("token")
 
     user=User.query.filter_by(id=id_).first()
     if user is None:
         return "User was none"
         # return render_template("login.html", retry=-1)
-    elif user.passwdhash==passhash:
+    elif user.passwdhash==passhash and user.verify_totp(token):
             return render_template("home.html",fromid=id_, first=user.first)
     else:
         return passwd+" "+user.passwdhash+' '+passhash
@@ -374,3 +378,32 @@ def confirmedpaylater():
     sch_id=scheduledpayment.id
     t = threading.Thread(name='wait', target=wait, args=(fromid, toid, val,hrs, sch_id))
     t.start()
+
+
+@app.route('/twofactor')
+def two_factor_setup():
+    user = User.query.all()[-1]
+    if user is None:
+        return render_template("createaccount.html", retry =True)
+    # since this page contains the sensitive qrcode, make sure the browser
+    # does not cache it so this code for not caching
+    return render_template('twofactor.html'), 200, {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'}
+
+@app.route('/qrcode')
+def qrcode():
+    user = User.query.all()[-1]
+    if user is None:
+        abort(404)
+
+    # render qrcode for FreeTOTP
+    url = pyqrcode.create(user.get_totp_uri())
+    stream = io.BytesIO()
+    url.svg(stream, scale=5)
+    return stream.getvalue(), 200, {
+        'Content-Type': 'image/svg+xml',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'}

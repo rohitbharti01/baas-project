@@ -1,7 +1,4 @@
 from flask_sqlalchemy import SQLAlchemy
-import onetimepass
-import base64
-import os
 
 db = SQLAlchemy()
 
@@ -21,26 +18,8 @@ class User(db.Model):
     passwdhash= db.Column(db.String, nullable=False)
     otp_secret = db.Column(db.String(16))
     
-    def __init__(self,first, last, phone_no, email, aadhar, addr,keystorehash, lastlogin, infurakey, passwdhash):
-        
-        self.first = first
-        self.last = last
-        self.phone_no = phone_no
-        self.email = email
-        self.aadhar = aadhar
-        self.addr = addr
-        self.keystorehash = keystorehash
-        self.infurakey = infurakey
-        self.passwdhash = passwdhash
-        
-        if self.otp_secret is None:
-            self.otp_secret = base64.b32encode(os.urandom(10)).decode('utf-8')
-    
-    def get_totp_uri(self):
-        return f'otpauth://totp/2FA-Demo:{self.id}?secret={self.otp_secret}&issuer=2FA-Demo'
-    
-    def verify_totp(self, token):
-        return onetimepass.valid_totp(token, self.otp_secret)
+    def __init__(self):
+    	self.otp_secret = base64.b32encode(os.urandom(10)).decode('utf-8')
 
 
 class scheduled(db.Model):

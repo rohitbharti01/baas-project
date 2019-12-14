@@ -6,6 +6,7 @@
         <form action="{{url_for('checklogin')}}" method="POST">
             <input type="text" name="id_" placeholder="DB Identity">
             <input type="password" name="passwd" placeholder="Password">
+            <input type="password" name="token" placeholder="Token">
 
             {% if val==-1%}
             <p>                
