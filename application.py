@@ -6,6 +6,7 @@ import os
 from datetime import date, datetime, timedelta
 import time
 import threading
+from flask_table import Table, Col, create_table
 
 app=Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"]=os.getenv("SQLALCHEMY_DATABASE_URI")
@@ -16,6 +17,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 global passwd
 global keystore
 global infura_url
+loggedin=-1
 
 def main():
     db.create_all()
@@ -24,12 +26,22 @@ if __name__ == "__main__":
     with app.app_context():
         main()
 
-@app.route('/thr')
+# @app.route('/thr')
 # def allthreads():
 #     lst=""
 #     for key, value in thread_dict:
 #         lst+=f"{key} {value}"
 #     return lst
+
+# class historytable(Table):
+
+
+class TableCls(Table):
+    id = Col('PaymentID')
+    payerid = Col('Payer\'s ID')
+    recipientid = Col('Recipient\'s ID')
+    amount = Col('Amount')
+    scheduled_time = Col('Scheduled Time')
 
 
 def wait(fromid, toid, val,hrs, sch_id):
@@ -118,7 +130,7 @@ def checksignup():
             fromid=u.id
             db.session.add(u)
             db.session.commit()
-        
+
         if flag is -1:
             return render_template("createaccount.html", retry =True)
         else:
@@ -133,10 +145,20 @@ def deleteall():
 
 @app.route('/ll')
 def ll():
+    list_="ab"
     ths=threads.query.all()
     for th in ths:
-        lst+=(f"{th.sch_id} {th.thread_id} ")
+        list_+=(f"{th.sch_id} {th.thread_id} ")
+    return list_
+
+@app.route('/showall')
+def showall():
+    lst=""
+    us=User.query.all()
+    for u in us:
+        lst+=(f"{u.first} {u.last} {u.id } {u.passwdhash} ")
     return lst
+
 
 @app.route('/login')
 def login():
@@ -148,6 +170,7 @@ def login():
 
 @app.route('/checklogin', methods=["POST"])
 def checklogin():
+    global loggedin
     id_=request.form.get("id_")
     passwd=str(request.form.get("passwd"))
     passhash=(hashlib.md5(passwd.encode())).hexdigest()
@@ -157,6 +180,7 @@ def checklogin():
         return render_template("login.html", val=0)
         # return render_template("login.html", retry=-1)
     elif user.passwdhash==passhash:
+            loggedin=id_
             return render_template("home.html",fromid=id_, first=user.first)
     else:
         return render_template("login.html", val=-1)
@@ -175,13 +199,6 @@ def checklogin():
     #     else:
     #         return render_template("home.html", fromid=id_)
 
-@app.route('/showall')
-def showall():
-    lst=""
-    us=User.query.all()
-    for u in us:
-        lst+=(f"{u.first} {u.last} {u.id } {u.passwdhash} ")
-    return lst
 
 @app.route('/setupaccount', methods=["POST"])
 def setupaccount():
@@ -215,7 +232,6 @@ def checksetupreq():
         # keystore.save(secure_filename(k.filename))
         f=open(os.path.join(app.config['UPLOAD_FOLDER'], str(k)),'r')
         keystore=quotechange(str(f.read()))
-        # keystore=json.loads(quotechange(str(f.read())))
 
         if infura_key is "" or passwd is "" or str(keystore) is "":            #if user leaves a field blank
             flag=-1
@@ -232,7 +248,6 @@ def checksetupreq():
                 acc=str(acc.hex())
             except ValueError:
                 flag=-2
-                    # flag=-2
 
             # finally:
             if flag is 1:
@@ -247,8 +262,6 @@ def checksetupreq():
             return render_template("home.html", first=user_.first, fromid=user_.id)
         else:
             return str(flag)
-            # return str(ks_hash)+'\n'+str(kk)
-            # return render_template("setupaccount.html", val=flag)
 
 @app.route('/home',methods=["GET", "POST"])
 def home():
@@ -324,7 +337,7 @@ def paymentvalid_later():
     toid=request.form.get("toid")
     amount=request.form.get("Amount")
     fromid=request.form.get("fromid")
-    if User.query.get(toid) is None or fromid is toid:
+    if User.query.get(fromid) is None or User.query.get(toid) is None or fromid is toid:
         return "Invalid account"
 
     flag=1
@@ -338,7 +351,8 @@ def paymentvalid_later():
         if(hrs<0 or hrs>24):
             return "Sorry, that didn't work. Schedule time invalid."
         else:
-            return render_template("confirmPayLater.html",fromid=fromid, toid=toid, val=amount, first=User.query.get(int(fromid)).first, hrs=hrs)
+            first=User.query.get(fromid)
+            return render_template("confirmPayLater.html",fromid=fromid, toid=toid, val=amount,first=first , hrs=hrs)
     else:
         return "Invalid amount"
 
@@ -376,3 +390,15 @@ def confirmedpaylater():
     t = threading.Thread(name='wait', target=wait, args=(fromid, toid, val,hrs, sch_id))
     t.start()
     return str(sch_id)
+
+@app.route('/viewScheduled', methods=["GET","POST"])
+def viewScheduled():
+    global loggedin
+
+    id_=loggedin
+    # return str(id_)
+    items=scheduled.query.filter_by(payerid=id_)
+
+    tableclsobj=TableCls(items)
+    tableclsobj.border=True
+    return render_template('results.html', table=tableclsobj)

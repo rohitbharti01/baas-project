@@ -2,7 +2,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-
 class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
@@ -38,7 +37,7 @@ class payHistory(db.Model):
 class threads(db.Model):
     __tablename__="threads"
     id=db.Column(db.Integer, primary_key=True)
-    sch_id= db.Column(db.String, nullable=False)
+    sch_id= db.Column(db.String, db.ForeignKey(scheduled.id))
     thread_id= db.Column(db.String, nullable=False)
 
 # class PayHistory(db.Model):
