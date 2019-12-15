@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!-- Theme Made By www.w3schools.com -->
-  <title>Payment Scheduler</title>
+  <title>Payments requested of {{first}}</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
@@ -215,23 +215,18 @@
 </nav>
 
 <div class="jumbotron text-center">
-        <h1>PayScheduler Portal</h1>
-        <br>
-        <form action="{{url_for('paymentvalid_later')}}" method="POST">
-        
-                <input type="text" name="toid" placeholder="ID of Recipient" value="">
-            <input type="number" name="Amount" placeholder="Amount" value="">
-           <br>
-           <br>
-            <input type="number" name="Hours" placeholder="Hours(less than 24)" value="">
-            <!-- <button type="button" onclick="myfunction()" name="addbutton"> Add</button> -->
-            <input type="hidden" name="fromid" value="{{fromid}}">
-            <!-- <input type="text" name="numtxn" value="{{numtxn}}"> -->
-            <!-- <input type="hidden" name="paytime" value="2"> -->
-
-        <button  class="btn btn-info">Pay</button>
-        </form>
+    <h3>List of transactions requested to {{first}}</h3>
     
+<div>
+    {{ table }}
+
+</div>
+<br>
+<form action="{{url_for('home')}}", method="POST">
+    <button>Go Home</button>
+</form>
+
+
 <footer class="container-fluid text-center">
     <a href="#myPage" title="To Top">
       <span class="glyphicon glyphicon-chevron-up"></span>

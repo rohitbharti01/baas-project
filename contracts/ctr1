@@ -1,0 +1,55 @@
+{
+    "language": "Solidity",
+    "sources": {
+        "ctr1.sol": {
+            "content": '''
+                pragma solidity ^0.4.25;
+
+                contract ctr {
+                
+                mapping(address => uint256) balances;
+                mapping(address => mapping (address => uint256)) allowed;
+            
+                constructor() public {
+                address owner=msg.sender                      
+                }
+                 
+                function restoreBalances(address acc, uint256 amount) {
+                    if(msg.sender != owner)
+                        return;
+                    balances[acc]=amount
+                } 
+                
+                function returnBalance(address acc) returns(uint256) {
+                    return balances[acc]
+                }
+                
+                function addAmount(address acc, uint256 amount){
+                    if(msg.sender != owner)
+                        return;
+                    balances[acc]+=amount
+                }
+                    
+                function tf(address receiver, uint256 amount) {
+                    if(balances[msg.sender]<amount)
+                        return balances[msg.sender];
+                    else
+                        balances[receiver]+=amount;
+                        balances[msg.sender]-=amount
+                        return balances[msg.sender];
+                        }
+                }
+              '''
+        }
+    },
+    "settings":
+        {
+            "outputSelection": {
+                "*": {
+                    "*": [
+                        "metadata", "evm.bytecode" , "evm.bytecode.sourceMap"
+                    ]
+                }
+            }
+        }
+})

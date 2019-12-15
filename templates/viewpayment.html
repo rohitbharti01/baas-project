@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!-- Theme Made By www.w3schools.com -->
-  <title>Payment Scheduler</title>
+  <title>Payment Details</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
@@ -215,67 +215,70 @@
 </nav>
 
 <div class="jumbotron text-center">
-        <h1>PayScheduler Portal</h1>
-        <br>
-        <form action="{{url_for('paymentvalid_later')}}" method="POST">
-        
-                <input type="text" name="toid" placeholder="ID of Recipient" value="">
-            <input type="number" name="Amount" placeholder="Amount" value="">
-           <br>
-           <br>
-            <input type="number" name="Hours" placeholder="Hours(less than 24)" value="">
-            <!-- <button type="button" onclick="myfunction()" name="addbutton"> Add</button> -->
-            <input type="hidden" name="fromid" value="{{fromid}}">
-            <!-- <input type="text" name="numtxn" value="{{numtxn}}"> -->
-            <!-- <input type="hidden" name="paytime" value="2"> -->
+        <h1>Payment Details</h1>
 
-        <button  class="btn btn-info">Pay</button>
+        <p>Recepient's Name: {{firstto}} {{lastto}}</p>
+        <p>Payment Amount: {{amt}}</p>
+
+        {% if type==1 %}
+        <p>Scheduled Time: {{scheduled_time}}</p>
+
+        <form action="{{url_for('delete_sch')}}" method="POST">
+        <input type="hidden" name="id" value={{id}}>
+        <input type="hidden" name="fromid" value={{fromid}}>
+        
+            <button>Cancel transaction</button>
         </form>
-    
-<footer class="container-fluid text-center">
-    <a href="#myPage" title="To Top">
-      <span class="glyphicon glyphicon-chevron-up"></span>
-    </a>
-    <!-- <p>Bootstrap Theme Made By <a href="https://www.w3schools.com" title="Visit w3schools">www.w3schools.com</a></p> -->
-  </footer>
-  
-  <script>
-  $(document).ready(function(){
-    // Add smooth scrolling to all links in navbar + footer link
-    $(".navbar a, footer a[href='#myPage']").on('click', function(event) {
-      // Make sure this.hash has a value before overriding default behavior
-      if (this.hash !== "") {
-        // Prevent default anchor click behavior
-        event.preventDefault();
-  
-        // Store hash
-        var hash = this.hash;
-  
-        // Using jQuery's animate() method to add smooth page scroll
-        // The optional number (900) specifies the number of milliseconds it takes to scroll to the specified area
-        $('html, body').animate({
-          scrollTop: $(hash).offset().top
-        }, 900, function(){
-     
-          // Add hash (#) to URL when done scrolling (default click behavior)
-          window.location.hash = hash;
-        });
-      } // End if
-    });
-    
-    $(window).scroll(function() {
-      $(".slideanim").each(function(){
-        var pos = $(this).offset().top;
-  
-        var winTop = $(window).scrollTop();
-          if (pos < winTop + 600) {
-            $(this).addClass("slide");
-          }
-      });
-    });
-  })
-  </script> 
-  
-  </body>
-  </html>
-  
+        {% elif type==2 %}    
+        <p>Payment Time: {{paid_time}}</p>
+        <a href={{txnlink}}>View transaction details...</a>
+
+        {% endif %}
+   
+        <footer class="container-fluid text-center">
+            <a href="#myPage" title="To Top">
+              <span class="glyphicon glyphicon-chevron-up"></span>
+            </a>
+            <!-- <p>Bootstrap Theme Made By <a href="https://www.w3schools.com" title="Visit w3schools">www.w3schools.com</a></p> -->
+          </footer>
+          
+          <script>
+          $(document).ready(function(){
+            // Add smooth scrolling to all links in navbar + footer link
+            $(".navbar a, footer a[href='#myPage']").on('click', function(event) {
+              // Make sure this.hash has a value before overriding default behavior
+              if (this.hash !== "") {
+                // Prevent default anchor click behavior
+                event.preventDefault();
+          
+                // Store hash
+                var hash = this.hash;
+          
+                // Using jQuery's animate() method to add smooth page scroll
+                // The optional number (900) specifies the number of milliseconds it takes to scroll to the specified area
+                $('html, body').animate({
+                  scrollTop: $(hash).offset().top
+                }, 900, function(){
+             
+                  // Add hash (#) to URL when done scrolling (default click behavior)
+                  window.location.hash = hash;
+                });
+              } // End if
+            });
+            
+            $(window).scroll(function() {
+              $(".slideanim").each(function(){
+                var pos = $(this).offset().top;
+          
+                var winTop = $(window).scrollTop();
+                  if (pos < winTop + 600) {
+                    $(this).addClass("slide");
+                  }
+              });
+            });
+          })
+          </script>
+          
+          </body>
+          </html>
+          
