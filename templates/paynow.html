@@ -32,7 +32,6 @@
   }  
   .jumbotron {
     background-color: #f4511e;
-    color: #fff;
     padding: 100px 25px;
     font-family: Montserrat, sans-serif;
   }
@@ -225,7 +224,9 @@
       </div>
     </div>
   </form> -->
-  <h1>PayNow Portal</h1>
+  <font color="white">  <h1>PayNow Portal</h1>
+  </font>
+
         <form action="{{url_for('paymentvalid_now')}}" method="POST">
               <input type="text" name="toid" placeholder="ID of Recipient" value="">
               <br>

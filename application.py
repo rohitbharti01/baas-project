@@ -24,52 +24,59 @@ app = Flask(__name__, template_folder='templates')
 #                 "content": '''
 #                 pragma solidity ^0.4.25;
 
-#                 contract ctr {
+                # contract ctr {
 
-#                 mapping(address => uint256) balances;
-#                 mapping(address => mapping (address => uint256)) allowed;
-#                 address public owner;
+                # mapping(address => uint256) balances;
+                # mapping(address => mapping (address => uint256)) allowed;
+                # address public owner;
 
-#                 constructor() public {
-#                 owner=msg.sender  ;
-#                 }
+                # constructor() public {
+                # owner=msg.sender  ;
+                # }
 
-#                 function restoreBalances(address acc, uint256 amount) public{
-#                     if(msg.sender != owner)
-#                         return;
-#                     balances[acc]=amount;
-#                 }
+                # function restoreBalances(address acc, uint256 amount) public{
+                #     if(msg.sender != owner)
+                #         return;
+                #     balances[acc]=amount;
+                # }
 
-#                 function returnBalance(address acc) public returns(uint256) {
-#                     return balances[acc];
-#                 }
+                # function returnBalance(address acc) public returns(uint256) {
+                #     return balances[acc];
+                # }
 
-#                 function addAmount(address acc, uint256 amount) public{
-#                     if(msg.sender != owner)
-#                         return;
-#                     balances[acc]+=amount;
-#                 }
+                # function addAmount(address acc, uint256 amount) public{
+                #     if(msg.sender != owner)
+                #         return;
+                #     balances[acc]+=amount;
+                # }
 
-#                 function transfer(address receiver,
-#                  uint numTokens) public returns (bool) {
-#                     require(numTokens <= balances[msg.sender]);
-#                     balances[msg.sender] = balances[msg.sender] — numTokens;
-#                     balances[receiver] = balances[receiver] + numTokens;
-#                     emit Transfer(msg.sender, receiver, numTokens);
-#                     return true;
-#                 }
+                # function approve(address delegate,
+                # uint numTokens) public returns (bool) {
+                # allowed[msg.sender][delegate] = numTokens;
+                # emit Approval(msg.sender, delegate, numTokens);
+                # return true;
+                # }
 
-#                 function transferFrom(address owner, address buyer,
-#                      uint numTokens) public returns (bool) {
-#                     require(numTokens <= balances[owner]);
-#                     require(numTokens <= allowed[owner][msg.sender]);
-#                     balances[owner] = balances[owner] — numTokens;
-#                     allowed[owner][msg.sender] =
-#                             allowed[from][msg.sender] — numTokens;
-#                     balances[buyer] = balances[buyer] + numTokens;
-#                     Transfer(owner, buyer, numTokens);
-#                     return true;
-#                     }
+                # function transfer(address receiver,
+                #  uint numTokens) public returns (bool) {
+                #     require(numTokens <= balances[msg.sender]);
+                #     balances[msg.sender] = balances[msg.sender] — numTokens;
+                #     balances[receiver] = balances[receiver] + numTokens;
+                #     emit Transfer(msg.sender, receiver, numTokens);
+                #     return true;
+                # }
+
+                # function transferFrom(address owner, address buyer,
+                #      uint numTokens) public returns (bool) {
+                #     require(numTokens <= balances[owner]);
+                #     require(numTokens <= allowed[owner][msg.sender]);
+                #     balances[owner] = balances[owner] — numTokens;
+                #     allowed[owner][msg.sender] =
+                #             allowed[from][msg.sender] — numTokens;
+                #     balances[buyer] = balances[buyer] + numTokens;
+                #     Transfer(owner, buyer, numTokens);
+                #     return true;
+                #     }
 #               '''
 
 #             }
@@ -131,6 +138,7 @@ class HistoryTable(Table):
     recipientid = Col('Recipient\'s ID')
     amount = Col('Amount')
     payment_datetime = Col('Payment Time')
+
 
 class RequestTable(Table):
     link = LinkCol('Link to request', 'respondtorequest',
@@ -204,10 +212,10 @@ def wait(dict_):
         )
         contr.functions.transferFrom(str(User.query.get(fromid).addr), amount).transact()
 
-            scheduledpayment = scheduled.query.get(sch_id)
-            paid = payHistory(payerid=fromid, recipientid=toid, amount=val,
-                            payment_datetime=datetime.now(), txnhash=txnhash)
-            tid = paid.id
+        scheduledpayment = scheduled.query.get(sch_id)
+        paid = payHistory(payerid=fromid, recipientid=toid, amount=val,
+                        payment_datetime=datetime.now(), txnhash=txnhash)
+        tid = paid.id
     except:
         flag = -1
 
@@ -403,9 +411,15 @@ def checklogin():
         return render_template("login.html", val=-1)
         # return render_template("login.html", retry=-1)
 
+@app.route('/addmoneytowallet', methods=["POST"])
+def addmoneytowallet():
+    global loggedin
+    amount=request.form.get("amount")
+    return addMoney(User.query.get(loggedin).addr, amount)
 
-@app.route('/addMoney', methods=["POST"])
 def addMoney(address_, amount, userId):
+    global abi
+    global bytecode
     w3 = Web3(Web3.EthereumTesterProvider())
     w3.eth.defaultAccount = w3.eth.accounts[0]
 
@@ -417,14 +431,18 @@ def addMoney(address_, amount, userId):
         abi=abi)
     contract.functions.restoreBalance(
         address_, User.query.get(userId).balance).call()
-    x = contract.functions.addAmount(address_, amount).call()
-    if x:
-        User.query.get(userId).balance = x
-        db.session.commit()
-        return "New Balance: "+x
-    else:
-        return "money not added"
+    contract.functions.addAmount(address_, amount).transact()
 
+    User.query.get(userId).balance+=amount
+    db.session.commit()
+    return render_template('checkbalance.html',fromid=loggedin)
+
+@app.route('/checkbalance')
+def checkbalance():
+    global loggedin
+    if loggedin is -1:
+        return render_template('login.html') 
+    return render_template('balance.html', bal=User.query.get(loggedin).balance)
 
 @app.route('/home', methods=["GET", "POST"])
 def home():
@@ -587,18 +605,18 @@ def confirmedpaylater():
     db.session.commit()
 
     infura_url = 'https://mainnet.infura.io/v3/'+User.query.get(fromid).infurakey
-    w3 = Web3(Web3.HTTPProvider(infura_url))
-    ctr_ = w3.eth.contract(abi=abi, bytecode=bytecode)
+    # w3 = Web3(Web3.HTTPProvider(infura_url))
+    # ctr_ = w3.eth.contract(abi=abi, bytecode=bytecode)
 
-    keystore=keyfromdict(keyDict.query.get(fromid))
-    pk = (w3.eth.account.decrypt(keystore, pwd))
-    tx_hash = ctr_.constructor().transact()
-    tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
-    contr = w3.eth.contract(
-        address=tx_receipt.contractAddress,
-        abi=abi
-    )
-    contr.functions.approve(w3.eth.accounts[0], amount).transact(pk)
+    # keystore=keyfromdict(keyDict.query.get(fromid))
+    # pk = (w3.eth.account.decrypt(keystore, pwd))
+    # tx_hash = ctr_.constructor().transact()
+    # tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+    # contr = w3.eth.contract(
+    #     address=tx_receipt.contractAddress,
+    #     abi=abi
+    # )
+    # contr.functions.approve(w3.eth.accounts[0], amount).transact(pk)
 
     sch_id = scheduledpayment.id
     dict_ = {'fromid': fromid, 'toid': toid,
@@ -614,7 +632,6 @@ def logout():
     loggedin = -1
     pwd = "pwd"
     return render_template("home.html")
-
 
 @app.route('/viewScheduled', methods=["GET", "POST"])
 def viewScheduled():
@@ -678,7 +695,6 @@ def viewpaymentfn(id):
     return render_template("viewpayment.html", type=2, id=id, firstto=firstto, lassto=lastto, amt=amt, paid_time=paid_time, fromid=fromid, txnlink=txnlink)
 
 
-
 @app.route('/addrequest', methods=["POST", "GET"])
 def addrequest():
     global loggedin
@@ -701,12 +717,12 @@ def checkrequest():
     reason=request.form.get("reason")
 
     scheduled_time=datetime.now()+timedelta(hours=(hrs))
-    if payerid is "" or fromid is ""or amount is None or hrs is None
-     or User.query.get(payerid) is None or amount<0 or hrs <0 or hrs>24 or
+    if payerid is "" or fromid is ""or amount is None or hrs is None \
+     or User.query.get(payerid) is None or amount<0 or hrs <0 or hrs>24 or \
      User.query.get(sellerid) is None or payerid is sellerid :
         return "Sorry, that didn't work."
     else:
-        req=Requested(payerid=payerid, amount=amount,sellerid=sellerid,reason=reason scheduled_time=scheduled_time)
+        req=Requested(payerid=payerid, amount=amount,sellerid=sellerid,reason=reason, scheduled_time=scheduled_time)
         db.session.add(req)
         db.session.commit()
         return render_template('home.html', fromid=fromid, mesgexists=1, mesg=str("Request sent."))
@@ -726,7 +742,6 @@ def viewrequests():
     tableclsobj.border = True
 
     return render_template('requests.html', payerid=id_, table=tableclsobj, first=User.query.get(id_).first)
-
 
 
 @app.route('/respondtorequest/<int:id>', methods=["POST"])

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!-- Theme Made By www.w3schools.com -->
-  <title>Payment Details</title>
+  <title>Pay Now</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
@@ -214,75 +214,88 @@
 </nav>
 
 <div class="jumbotron text-center">
+  <!-- <h1>BaasApp</h1> 
+  <p>We specialize in Online Payment</p> 
+  <form>
+    <div class="input-group">
+      <input type="email" class="form-control" size="50" placeholder="Email Address" required>
+      <div class="input-group-btn">
+        <button type="button" class="btn btn-danger">Subscribe</button>
+      </div>
+    </div>
+  </form> -->
+  <font color="white"> <h1>Your Balance</h1>
+  <h2>{{bal}}</h2> </font>
 
-  <font color="white">  
-    <h1>Payment Details</h1>
+  
 
-        <p>Recepient's Name: {{firstto}} {{lastto}}</p>
-        <p>Payment Amount: {{amt}}</p>
+  
 
-        {% if type==1 %}
-        <p>Scheduled Time: {{scheduled_time}}</p>
-  </font>
+        <form action="{{url_for('home')}}" method="POST">
+              <input type="hidden" name="fromid" value={{fromid}}>
+        <button class="btn btn-info" >Go Home</button>
+    </form>
+</div>
 
-        
+<!-- Container (About Section) -->
+<!-- <div id="about" class="container-fluid">
+  <div class="row">
+    <div class="col-sm-8">
+      <h2>About Us</h2><br>
+      <h4>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</h4><br>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <br><button class="btn btn-default btn-lg">Get in Touch</button>
+    </div>
+    <div class="col-sm-4">
+      <img src="ory2.png" height="150" width="150">
+      <!-- <span class="glyphicon glyphicon-signal logo"></span> -->
+    
+<!-- Image of location/map -->
+<!-- <img src="/w3images/map.jpg" class="w3-image w3-greyscale-min" style="width:100%"> -->
 
-        <form action="{{url_for('delete_sch')}}" method="POST">
-        <input type="hidden" name="id" value={{id}}>
-        <input type="hidden" name="fromid" value={{fromid}}>
-        
-            <button>Cancel transaction</button>
-        </form>
-        {% elif type==2 %}    
-        <p>Payment Time: {{paid_time}}</p>
-        <a href={{txnlink}}>View transaction details...</a>
+<footer class="container-fluid text-center">
+  <a href="#myPage" title="To Top">
+    <span class="glyphicon glyphicon-chevron-up"></span>
+  </a>
+  <!-- <p>Bootstrap Theme Made By <a href="https://www.w3schools.com" title="Visit w3schools">www.w3schools.com</a></p> -->
+</footer>
 
-        {% endif %}
+<script>
+$(document).ready(function(){
+  // Add smooth scrolling to all links in navbar + footer link
+  $(".navbar a, footer a[href='#myPage']").on('click', function(event) {
+    // Make sure this.hash has a value before overriding default behavior
+    if (this.hash !== "") {
+      // Prevent default anchor click behavior
+      event.preventDefault();
+
+      // Store hash
+      var hash = this.hash;
+
+      // Using jQuery's animate() method to add smooth page scroll
+      // The optional number (900) specifies the number of milliseconds it takes to scroll to the specified area
+      $('html, body').animate({
+        scrollTop: $(hash).offset().top
+      }, 900, function(){
    
-        <footer class="container-fluid text-center">
-            <a href="#myPage" title="To Top">
-              <span class="glyphicon glyphicon-chevron-up"></span>
-            </a>
-            <!-- <p>Bootstrap Theme Made By <a href="https://www.w3schools.com" title="Visit w3schools">www.w3schools.com</a></p> -->
-          </footer>
-          
-          <script>
-          $(document).ready(function(){
-            // Add smooth scrolling to all links in navbar + footer link
-            $(".navbar a, footer a[href='#myPage']").on('click', function(event) {
-              // Make sure this.hash has a value before overriding default behavior
-              if (this.hash !== "") {
-                // Prevent default anchor click behavior
-                event.preventDefault();
-          
-                // Store hash
-                var hash = this.hash;
-          
-                // Using jQuery's animate() method to add smooth page scroll
-                // The optional number (900) specifies the number of milliseconds it takes to scroll to the specified area
-                $('html, body').animate({
-                  scrollTop: $(hash).offset().top
-                }, 900, function(){
-             
-                  // Add hash (#) to URL when done scrolling (default click behavior)
-                  window.location.hash = hash;
-                });
-              } // End if
-            });
-            
-            $(window).scroll(function() {
-              $(".slideanim").each(function(){
-                var pos = $(this).offset().top;
-          
-                var winTop = $(window).scrollTop();
-                  if (pos < winTop + 600) {
-                    $(this).addClass("slide");
-                  }
-              });
-            });
-          })
-          </script>
-          
-          </body>
-          </html>
-          
+        // Add hash (#) to URL when done scrolling (default click behavior)
+        window.location.hash = hash;
+      });
+    } // End if
+  });
+  
+  $(window).scroll(function() {
+    $(".slideanim").each(function(){
+      var pos = $(this).offset().top;
+
+      var winTop = $(window).scrollTop();
+        if (pos < winTop + 600) {
+          $(this).addClass("slide");
+        }
+    });
+  });
+})
+</script> 
+
+</body>
+</html>

@@ -32,7 +32,6 @@
   }  
   .jumbotron {
     background-color: #f4511e;
-    color: #fff;
     padding: 100px 25px;
     font-family: Montserrat, sans-serif;
   }
@@ -215,7 +214,8 @@
 </nav>
 
 <div class="jumbotron text-center">
-        <h1>Request Details</h1>
+  <font color="white">  
+<h1>Request Details</h1>
 
         <p>Requester's Name: {{firstto}} {{lastto}}</p>
         <p>Requester's Public ID: {{requesterid}}</p>
@@ -223,6 +223,9 @@
         <p>Requester's Public ID: {{sellerid}}</p>
         <p>Payment Amount: {{amt}}</p>
         <p>Scheduled Time: {{scheduled_time}}</p>
+  </font>
+
+        
 
         <form action="{{url_for('approverequest')}}" method="POST">
             <input type="hidden" name="id" value={{id}}>
